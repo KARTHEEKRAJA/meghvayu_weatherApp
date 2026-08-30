@@ -159,4 +159,4 @@ npm test
 
 ## About PM Accelerator
 
-The Product Manager Accelerator Program supports PM professionals through every stage of their career, from students seeking their first PM role to directors and leaders growing their leadership skills via hands-on training, coaching, and a global community. See their [LinkedIn page](https://www.linkedin.com/company/product-manager-accelerator/).
+The Product Manager Accelerator Program supports PM professionals through every stage of their career, from students seeking their first PM role to directors and leaders growing their leadership skills via hands-on training, coaching, and a global community. See their [LinkedIn page](https://www.linkedin.com/school/pmaccelerator/).

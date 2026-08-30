@@ -86,7 +86,7 @@ export default function Home() {
               product management and AI roles at top companies. Learn more on
               their{" "}
               <a
-                href="https://www.linkedin.com/company/product-manager-accelerator/"
+                href="https://www.linkedin.com/school/pmaccelerator/"
                 target="_blank"
                 rel="noreferrer"
                 className="font-semibold text-blue-700 underline"
