@@ -8,6 +8,51 @@
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 
+/* ---------- resilience: retry with backoff + short-lived cache ---------- */
+
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const cache = new Map(); // key -> { expires, data }
+
+function cacheGet(key) {
+  const hit = cache.get(key);
+  if (hit && hit.expires > Date.now()) return hit.data;
+  cache.delete(key);
+  return null;
+}
+function cacheSet(key, data) {
+  if (cache.size > 500) cache.clear(); // crude bound for a demo app
+  cache.set(key, { expires: Date.now() + CACHE_TTL_MS, data });
+}
+
+/**
+ * fetch() with up to 3 attempts on transient failures (429, 5xx, network).
+ * Throws an error carrying the upstream status so the client sees a real reason.
+ */
+async function fetchWithRetry(url, label) {
+  const delays = [0, 600, 1500];
+  let lastErr;
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i]) await new Promise((r) => setTimeout(r, delays[i]));
+    try {
+      const res = await fetch(url, { headers: { "User-Agent": "MeghVayu-WeatherApp/1.0" } });
+      if (res.ok) return res;
+      const transient = res.status === 429 || res.status >= 500;
+      let reason = "";
+      try { reason = (await res.json()).reason || ""; } catch { /* ignore */ }
+      lastErr = new Error(
+        `${label} returned HTTP ${res.status}${reason ? ` (${reason})` : ""}.` +
+          (transient ? " Please try again in a moment." : "")
+      );
+      lastErr.status = 502;
+      if (!transient) break;
+    } catch (e) {
+      lastErr = new Error(`Could not reach ${label} (${e.message}). Please try again.`);
+      lastErr.status = 502;
+    }
+  }
+  throw lastErr;
+}
+
 /** WMO weather codes -> human labels (used by frontend for icons too). */
 export const WEATHER_CODES = {
   0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
@@ -35,13 +80,14 @@ export async function getCurrentAndForecast(lat, lon) {
     timezone: "auto",
     forecast_days: "6", // today + 5 days ahead
   });
-  const res = await fetch(`${FORECAST_URL}?${params}`);
-  if (!res.ok) {
-    const err = new Error("Weather service is unavailable. Try again shortly.");
-    err.status = 502;
-    throw err;
-  }
-  return res.json();
+  const key = `fc:${Number(lat).toFixed(3)},${Number(lon).toFixed(3)}`;
+  const cached = cacheGet(key);
+  if (cached) return cached;
+
+  const res = await fetchWithRetry(`${FORECAST_URL}?${params}`, "Weather service");
+  const data = await res.json();
+  cacheSet(key, data);
+  return data;
 }
 
 /**
@@ -63,17 +109,7 @@ export async function getTemperaturesForRange(lat, lon, startDate, endDate) {
     end_date: endDate,
   });
 
-  const res = await fetch(`${base}?${params}`);
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const body = await res.json();
-      detail = body.reason ? ` (${body.reason})` : "";
-    } catch { /* ignore */ }
-    const err = new Error(`Could not fetch temperatures for that date range${detail}.`);
-    err.status = 502;
-    throw err;
-  }
+  const res = await fetchWithRetry(`${base}?${params}`, "Temperature archive");
   const data = await res.json();
   const d = data.daily;
   if (!d || !d.time) {
