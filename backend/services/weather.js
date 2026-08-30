@@ -5,6 +5,8 @@
  * - Near-future date ranges (<=16 days out): forecast API
  */
 
+import { getCurrentAndForecastOWM, isConfigured as owmConfigured } from "./openweather.js";
+
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
 
@@ -84,8 +86,18 @@ export async function getCurrentAndForecast(lat, lon) {
   const cached = cacheGet(key);
   if (cached) return cached;
 
-  const res = await fetchWithRetry(`${FORECAST_URL}?${params}`, "Weather service");
-  const data = await res.json();
+  let data;
+  try {
+    const res = await fetchWithRetry(`${FORECAST_URL}?${params}`, "Weather service");
+    data = await res.json();
+    data.provider = "open-meteo";
+  } catch (primaryErr) {
+    // Primary provider down or rate-limited (e.g. shared-IP 429 on free hosting):
+    // fall back to OpenWeatherMap if a key is configured, else surface the error.
+    if (!owmConfigured()) throw primaryErr;
+    console.warn(`Open-Meteo failed (${primaryErr.message}); using OpenWeatherMap fallback.`);
+    data = await getCurrentAndForecastOWM(lat, lon);
+  }
   cacheSet(key, data);
   return data;
 }

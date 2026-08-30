@@ -122,3 +122,15 @@ test("weather code table covers the core WMO codes", () => {
     assert.ok(WEATHER_CODES[code], `missing code ${code}`);
   }
 });
+
+/* ---------- fallback provider mapping ---------- */
+import { owmToWmo } from "../services/openweather.js";
+
+test("maps OpenWeatherMap condition ids to WMO codes", () => {
+  assert.equal(owmToWmo(800), 0);   // clear
+  assert.equal(owmToWmo(802), 2);   // partly cloudy
+  assert.equal(owmToWmo(500), 61);  // light rain
+  assert.equal(owmToWmo(600), 71);  // light snow
+  assert.equal(owmToWmo(211), 95);  // thunderstorm
+  assert.equal(owmToWmo(741), 45);  // fog
+});
