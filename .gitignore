@@ -1,0 +1,6 @@
+node_modules/
+.next/
+*.log
+backend/weather.db*
+.env
+.env.local

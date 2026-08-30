@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Signature element: the whole app is themed by live conditions.
+   data-sky is set on <main> from the current weather code + day/night. */
+
+main[data-sky] {
+  transition: background 1.2s ease;
+  background: linear-gradient(160deg, var(--sky-from), var(--sky-to));
+  min-height: 100vh;
+}
+
+/* Adaptive text: dark ink on light skies, white on dark skies */
+main[data-sky] { --ink: #ffffff; --ink-soft: rgba(255, 255, 255, 0.8); --ink-shadow: 0 1px 3px rgba(15, 23, 42, 0.4); }
+main[data-sky="clear-day"],
+main[data-sky="snow-day"],
+main[data-sky="fog-day"],
+main[data-sky="clouds-day"] {
+  --ink: #1e293b;
+  --ink-soft: rgba(30, 41, 59, 0.75);
+  --ink-shadow: none;
+}
+
+.ink { color: var(--ink); text-shadow: var(--ink-shadow); }
+.ink-soft { color: var(--ink-soft); text-shadow: var(--ink-shadow); }
+
+main[data-sky="clear-day"]    { --sky-from: #38bdf8; --sky-to: #fde68a; }
+main[data-sky="clear-night"]  { --sky-from: #0f172a; --sky-to: #334155; }
+main[data-sky="clouds-day"]   { --sky-from: #64748b; --sky-to: #cbd5e1; }
+main[data-sky="clouds-night"] { --sky-from: #1e293b; --sky-to: #475569; }
+main[data-sky="rain-day"]     { --sky-from: #475569; --sky-to: #93c5fd; }
+main[data-sky="rain-night"]   { --sky-from: #111827; --sky-to: #1e3a5f; }
+main[data-sky="snow-day"]     { --sky-from: #94a3b8; --sky-to: #f1f5f9; }
+main[data-sky="snow-night"]   { --sky-from: #1e293b; --sky-to: #64748b; }
+main[data-sky="storm-day"]    { --sky-from: #312e81; --sky-to: #6b7280; }
+main[data-sky="storm-night"]  { --sky-from: #0c0a1d; --sky-to: #3730a3; }
+main[data-sky="fog-day"]      { --sky-from: #9ca3af; --sky-to: #e5e7eb; }
+main[data-sky="fog-night"]    { --sky-from: #374151; --sky-to: #6b7280; }
+main[data-sky="none"]         { --sky-from: #1e3a5f; --sky-to: #0f172a; }
+
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main[data-sky] { transition: none; }
+  .fx-layer { display: none; }
+  .tilt:hover { transform: none; }
+}
+
+/* ---- Ambient weather particles ---- */
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fx-drop {
+  position: absolute;
+  top: -10%;
+  width: 1.5px;
+  height: 18px;
+  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55));
+  animation: fx-fall linear infinite;
+}
+
+.fx-flake {
+  position: absolute;
+  top: -5%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  animation: fx-drift linear infinite;
+}
+
+.fx-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #fff;
+  animation: fx-twinkle ease-in-out infinite;
+}
+
+.fx-lightning {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  animation: fx-flash 7s infinite;
+}
+
+@keyframes fx-fall {
+  to { transform: translateY(115vh); }
+}
+@keyframes fx-drift {
+  0%   { transform: translateY(0) translateX(0); }
+  50%  { transform: translateY(55vh) translateX(24px); }
+  100% { transform: translateY(112vh) translateX(-12px); }
+}
+@keyframes fx-twinkle {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.9; }
+}
+@keyframes fx-flash {
+  0%, 93%, 97%, 100% { opacity: 0; }
+  94%, 96% { opacity: 0.25; }
+  95% { opacity: 0.6; }
+}
+
+/* ---- 3D tilt on forecast cards ---- */
+.tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.tilt:hover {
+  transform: perspective(700px) rotateX(6deg) translateY(-4px) scale(1.03);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.25);
+}
+
+/* Keep app content above the particle layer */
+.app-content { position: relative; z-index: 1; }
+
+/* Modal open animation */
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.modal-overlay { animation: overlay-in 0.2s ease-out; }
+.modal-card { animation: modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay, .modal-card { animation: none; }
+}
