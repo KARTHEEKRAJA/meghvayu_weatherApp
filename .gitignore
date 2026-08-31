@@ -1,6 +1,14 @@
 node_modules/
 .next/
 *.log
-backend/weather.db*
 .env
 .env.local
+# databases
+backend/weather.db*
+backend-node/weather.db*
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
