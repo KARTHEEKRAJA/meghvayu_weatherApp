@@ -62,8 +62,7 @@ export default function Home() {
         )}
 
         <footer className="ink-soft mt-10 pb-4 text-center text-xs">
-          Built with Next.js, Express, SQLite · Weather data from Open-Meteo ·
-          Geocoding by OpenStreetMap Nominatim
+          Built with Next.js, FastAPI, SQLite · Weather data from Open-Meteo · Geocoding by OpenStreetMap Nominatim
         </footer>
       </div>
 
